@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export type Member = { id: string; name: string; email: string };
@@ -13,6 +14,9 @@ export type Viewer = {
 // Người đang đăng nhập + thông tin thành viên. Chưa đăng nhập thì về /login.
 // Dùng `cache` để nhiều component trong cùng request chỉ hỏi Supabase một lần.
 export const getViewer = cache(async (): Promise<Viewer> => {
+  // Kiểm tra phiên so hạn token với giờ hiện tại (Date.now) nên phải chạy
+  // theo từng request thật, không prerender/prefetch sẵn.
+  await connection();
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const email = data?.claims?.email?.toLowerCase();

@@ -16,7 +16,10 @@ cp .env.example .env.local   # rồi điền giá trị, xem "Biến môi trư�
 npm run dev
 ```
 
-Mở http://localhost:3000, nhập email thành viên và bấm **Gửi link đăng nhập**.
+Mở http://localhost:3200, nhập email thành viên và bấm **Gửi link đăng nhập**.
+Bấm link trong email **trên cùng trình duyệt** vừa nhập email (xem "Đăng nhập bằng link email").
+
+Web chạy ở cổng 3200 (không phải 3000 mặc định) để không đụng các app khác hay dùng cổng 3000.
 
 ### Biến môi trường
 
@@ -74,16 +77,17 @@ Thành viên mới chỉ cần mở web, nhập email là nhận được link �
 ## Đăng nhập bằng link email
 
 1. Người dùng nhập email ở `/login`. Web kiểm tra email có trong `members` rồi mới nhờ Supabase gửi link.
-2. Link trong email trỏ về `/auth/confirm?token_hash=...`, web xác nhận và tạo phiên đăng nhập.
+2. Link trong email trỏ về `/auth/confirm`, web xác nhận và tạo phiên đăng nhập. Route này nhận cả hai kiểu link:
+   - `?code=...`: mẫu email **mặc định** của Supabase (đang dùng). Phải mở link trên **cùng trình duyệt** đã nhập email.
+   - `?token_hash=...&type=email`: mẫu email của dự án (`supabase/templates/`). Mở trên trình duyệt nào cũng được (vd: app Gmail trên điện thoại).
 3. `src/proxy.ts` làm mới phiên ở mỗi request và chuyển người chưa đăng nhập về `/login`.
 
-Mẫu email nằm ở `supabase/templates/`. Cấu hình Auth trên Supabase cần có:
+Cấu hình Auth trên Supabase (Authentication → URL Configuration):
 
-- **Site URL**: địa chỉ web chính (vd: `http://localhost:3000`, sau này là domain Vercel)
-- **Redirect URLs**: `http://localhost:3000/**` và domain Vercel `https://<tên>.vercel.app/**`
-- Mẫu email **Magic Link** và **Confirm signup** dùng nội dung trong `supabase/templates/`
+- **Site URL**: địa chỉ web chính (`http://localhost:3200` khi chạy ở máy, sau này là domain Vercel)
+- **Redirect URLs**: `http://localhost:*/**`, `http://127.0.0.1:*/**` và domain Vercel `https://<tên>.vercel.app/**`
 
-> **Giới hạn email của Supabase miễn phí:** dịch vụ email mặc định chỉ gửi tới email của thành viên trong team Supabase của bạn và chỉ vài email mỗi giờ. Để cả nhóm đăng nhập được cần cấu hình SMTP riêng (vd: Resend, Brevo đều có gói miễn phí) ở Authentication → Emails → SMTP Settings.
+> **Giới hạn email của Supabase miễn phí:** dịch vụ email mặc định chỉ gửi tới email của thành viên trong team Supabase của bạn, chỉ 2 email mỗi giờ, và **không cho sửa mẫu email**. Để cả nhóm đăng nhập được (và mở link bằng trình duyệt nào cũng được) cần cấu hình SMTP riêng (vd: Resend, Brevo đều có gói miễn phí) ở Authentication → Emails → SMTP Settings, rồi dán nội dung `supabase/templates/magic_link.html` và `confirmation.html` vào mẫu **Magic Link** và **Confirm signup**.
 
 ## Cấu trúc code
 

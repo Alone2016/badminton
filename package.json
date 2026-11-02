@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3200",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "db:link": "node --env-file=.env.local node_modules/supabase/dist/supabase.js link --project-ref",
-    "db:push": "node --env-file=.env.local node_modules/supabase/dist/supabase.js db push",
+    "db:push": "node --env-file=.env.local node_modules/supabase/dist/supabase.js db push --linked",
     "db:types": "node --env-file=.env.local node_modules/supabase/dist/supabase.js gen types typescript --linked --schema public > src/lib/database.types.ts"
   },
   "dependencies": {
