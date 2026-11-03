@@ -52,6 +52,10 @@ Phân quyền (RLS):
 - Thành viên: xem danh sách thành viên; xem/thêm/sửa/xóa buổi đánh và người chơi.
 - Thêm/sửa/xóa thành viên: quản trị làm trên Supabase Dashboard.
 
+Hàm `save_play_session(...)` lưu buổi đánh + danh sách người chơi trong một giao dịch (thêm mới khi không truyền `p_id`, sửa khi có). Hàm chạy với quyền người gọi nên RLS vẫn áp dụng.
+
+Giờ giấc: `started_at` lưu dạng `timestamptz`; web nhập/hiển thị theo giờ Việt Nam (UTC+7). Một tuần là Thứ 2 00:00 → Chủ nhật 23:59 giờ VN (`src/lib/week.ts`).
+
 ### Lệnh database (Supabase CLI)
 
 Các lệnh tự đọc `SUPABASE_ACCESS_TOKEN` và `SUPABASE_DB_PASSWORD` từ `.env.local`.
@@ -94,12 +98,19 @@ Cấu hình Auth trên Supabase (Authentication → URL Configuration):
 ```
 src/
   proxy.ts                 làm mới phiên + chặn trang khi chưa đăng nhập
-  lib/auth.ts              getViewer(): người đang đăng nhập + thông tin thành viên
+  lib/auth.ts              getViewer() / requireMember(): người đang đăng nhập + thông tin thành viên
+  lib/sessions.ts          đọc buổi đánh theo tuần, một buổi, thành viên, sân gần đây
+  lib/week.ts              ngày/tuần theo giờ Việt Nam
+  lib/format.ts            định dạng tiền VNĐ, thời lượng
   lib/supabase/            tạo Supabase client (server, proxy), đọc biến môi trường
   lib/database.types.ts    kiểu dữ liệu database (sinh bằng npm run db:types)
   app/login/               trang đăng nhập + server action gửi link
   app/auth/confirm/        xử lý link trong email
-  app/page.tsx             trang chủ (sau khi đăng nhập)
+  app/page.tsx             danh sách buổi theo tuần (?tuan=YYYY-MM-DD), nút chuyển tuần
+  app/buoi/moi/            thêm buổi
+  app/buoi/[id]/           sửa / xóa buổi
+  app/buoi/actions.ts      server action lưu / xóa buổi
+  app/buoi/session-form.tsx  form nhập buổi (dùng chung cho thêm và sửa)
 supabase/
   migrations/              cấu trúc bảng + RLS
   templates/               mẫu email đăng nhập

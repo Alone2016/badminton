@@ -1,23 +1,47 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { getViewer } from "@/lib/auth";
+import { formatDuration, formatVnd } from "@/lib/format";
+import { listWeekSessions, type PlaySession } from "@/lib/sessions";
+import {
+  addDays,
+  currentMonday,
+  isDateString,
+  mondayOf,
+  shortDate,
+  vnDate,
+  vnTime,
+  weekdayName,
+  weekHref,
+  weekLabel,
+} from "@/lib/week";
 import { signOut } from "./actions";
+import { ChevronLeft, ChevronRight } from "@/components/icons";
 
-export default function HomePage() {
+export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-6 sm:py-10">
+    <main className="mx-auto w-full max-w-xl px-4 pt-6 pb-28 sm:pt-10">
       <Suspense fallback={<HomeSkeleton />}>
-        <HomeContent />
+        <HomeContent searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function HomeContent() {
+async function HomeContent({
+  searchParams,
+}: Pick<PageProps<"/">, "searchParams">) {
   const { email, member } = await getViewer();
 
   if (!member) {
     return <NotMember email={email} />;
   }
+
+  // ?tuan=YYYY-MM-DD (ngày bất kỳ trong tuần); không có thì là tuần hiện tại.
+  const { tuan } = await searchParams;
+  const thisMonday = currentMonday(new Date());
+  const monday = isDateString(tuan) ? mondayOf(tuan) : thisMonday;
+  const sessions = await listWeekSessions(monday);
 
   return (
     <>
@@ -29,13 +53,188 @@ async function HomeContent() {
         <SignOutButton />
       </header>
 
-      <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="font-semibold">Buổi đánh trong tuần</h2>
+      <WeekNav monday={monday} thisMonday={thisMonday} />
+
+      <SessionList sessions={sessions} />
+
+      <AddSessionBar />
+    </>
+  );
+}
+
+function WeekNav({
+  monday,
+  thisMonday,
+}: {
+  monday: string;
+  thisMonday: string;
+}) {
+  const offset = Math.round(
+    (Date.parse(monday) - Date.parse(thisMonday)) / (7 * 24 * 3600 * 1000),
+  );
+  const title =
+    offset === 0
+      ? "Tuần này"
+      : offset === -1
+        ? "Tuần trước"
+        : offset === 1
+          ? "Tuần sau"
+          : "Tuần";
+
+  const navButton =
+    "grid size-12 shrink-0 place-items-center rounded-xl text-zinc-700 hover:bg-zinc-100 active:bg-zinc-200";
+
+  return (
+    <div className="mt-6">
+      <nav
+        aria-label="Chọn tuần"
+        className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-sm"
+      >
+        <Link
+          href={weekHref(addDays(monday, -7), thisMonday)}
+          aria-label="Tuần trước"
+          className={navButton}
+        >
+          <ChevronLeft />
+        </Link>
+        <div className="min-w-0 flex-1 text-center" aria-live="polite">
+          <p className="font-semibold">{title}</p>
+          <p className="text-sm text-zinc-500 tabular-nums">
+            {weekLabel(monday)}
+          </p>
+        </div>
+        <Link
+          href={weekHref(addDays(monday, 7), thisMonday)}
+          aria-label="Tuần sau"
+          className={navButton}
+        >
+          <ChevronRight />
+        </Link>
+      </nav>
+      {offset !== 0 && (
+        <div className="mt-2 text-center">
+          <Link
+            href="/"
+            className="inline-block px-3 py-2 text-sm font-medium text-emerald-700 underline"
+          >
+            Về tuần này
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SessionList({ sessions }: { sessions: PlaySession[] }) {
+  if (sessions.length === 0) {
+    return (
+      <section className="mt-6 rounded-2xl border border-dashed border-zinc-300 p-8 text-center">
+        <p className="font-medium">Chưa có buổi nào trong tuần này</p>
         <p className="mt-1 text-sm text-zinc-500">
-          Danh sách buổi và thống kê tuần sẽ có ở bản cập nhật tiếp theo.
+          Bấm “Thêm buổi” để ghi lại buổi đánh.
         </p>
       </section>
-    </>
+    );
+  }
+
+  // Gom theo ngày (giờ VN), giữ thứ tự giờ bắt đầu.
+  const days = new Map<string, PlaySession[]>();
+  for (const s of sessions) {
+    const day = vnDate(new Date(s.startedAt));
+    days.set(day, [...(days.get(day) ?? []), s]);
+  }
+
+  return (
+    <div className="mt-6 space-y-6">
+      {[...days].map(([day, list]) => (
+        <section key={day} aria-labelledby={`day-${day}`}>
+          <h2
+            id={`day-${day}`}
+            className="mb-2 text-sm font-semibold text-zinc-500"
+          >
+            {weekdayName(day)}, {shortDate(day)}
+          </h2>
+          <ul className="space-y-3">
+            {list.map((s) => (
+              <li key={s.id}>
+                <SessionCard session={s} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function SessionCard({ session: s }: { session: PlaySession }) {
+  const start = new Date(s.startedAt);
+  const end = new Date(start.getTime() + s.durationMinutes * 60 * 1000);
+
+  return (
+    <Link
+      href={`/buoi/${s.id}`}
+      className="block rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm hover:border-zinc-300 active:bg-zinc-50"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold tabular-nums">
+            {vnTime(start)} – {vnTime(end)}
+          </p>
+          <p className="mt-0.5 text-sm text-zinc-600">
+            <span className="break-words">{s.court}</span>
+            <span className="text-zinc-400"> · </span>
+            <span className="whitespace-nowrap">
+              {formatDuration(s.durationMinutes)}
+            </span>
+          </p>
+        </div>
+        <p className="shrink-0 font-semibold tabular-nums">
+          {formatVnd(s.costVnd)}
+        </p>
+      </div>
+
+      {s.players.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Người chơi">
+          {s.players.map((p) => (
+            <li
+              key={p.memberId ?? `guest:${p.name}`}
+              className={
+                p.isGuest
+                  ? "rounded-full border border-dashed border-zinc-300 px-2.5 py-0.5 text-sm text-zinc-600"
+                  : "rounded-full bg-emerald-50 px-2.5 py-0.5 text-sm text-emerald-800"
+              }
+            >
+              {p.name}
+              {p.isGuest && <span className="text-zinc-400"> (khách)</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {s.creatorName && (
+        <p className="mt-3 text-xs text-zinc-400">Tạo bởi {s.creatorName}</p>
+      )}
+    </Link>
+  );
+}
+
+// Nút "Thêm buổi" luôn ở đáy màn hình, dễ bấm bằng một tay.
+function AddSessionBar() {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 bg-white/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
+      <div className="mx-auto max-w-xl">
+        <Link
+          href="/buoi/moi"
+          className="flex h-12 w-full items-center justify-center gap-1 rounded-xl bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
+        >
+          <span aria-hidden className="text-xl leading-none">
+            +
+          </span>
+          Thêm buổi
+        </Link>
+      </div>
+    </div>
   );
 }
 
@@ -73,7 +272,10 @@ function HomeSkeleton() {
     <div className="animate-pulse" aria-label="Đang tải">
       <div className="h-4 w-16 rounded bg-zinc-200" />
       <div className="mt-2 h-6 w-40 rounded bg-zinc-200" />
-      <div className="mt-6 h-24 rounded-2xl bg-zinc-200" />
+      <div className="mt-6 h-16 rounded-2xl bg-zinc-200" />
+      <div className="mt-6 h-4 w-24 rounded bg-zinc-200" />
+      <div className="mt-2 h-28 rounded-2xl bg-zinc-200" />
+      <div className="mt-3 h-28 rounded-2xl bg-zinc-200" />
     </div>
   );
 }

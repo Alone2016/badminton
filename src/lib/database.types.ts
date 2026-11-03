@@ -120,6 +120,18 @@ export type Database = {
       can_sign_in: { Args: { p_email: string }; Returns: boolean }
       current_member_id: { Args: never; Returns: string }
       is_member: { Args: never; Returns: boolean }
+      save_play_session: {
+        Args: {
+          p_cost_vnd: number
+          p_court: string
+          p_duration_minutes: number
+          p_guest_names: string[]
+          p_id?: string
+          p_member_ids: string[]
+          p_started_at: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

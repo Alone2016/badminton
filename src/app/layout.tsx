@@ -12,7 +12,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="vi" className="h-full antialiased">
+    // scroll-pb: ô đang nhập không bị thanh nút cố định ở đáy màn hình che.
+    <html lang="vi" className="h-full scroll-pb-24 antialiased">
       <body className="min-h-full bg-zinc-50 text-zinc-900">{children}</body>
     </html>
   );

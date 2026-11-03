@@ -11,13 +11,10 @@ export type Viewer = {
   member: Member | null;
 };
 
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
 // Người đang đăng nhập + thông tin thành viên. Chưa đăng nhập thì về /login.
-// Dùng `cache` để nhiều component trong cùng request chỉ hỏi Supabase một lần.
-export const getViewer = cache(async (): Promise<Viewer> => {
-  // Kiểm tra phiên so hạn token với giờ hiện tại (Date.now) nên phải chạy
-  // theo từng request thật, không prerender/prefetch sẵn.
-  await connection();
-  const supabase = await createClient();
+async function readViewer(supabase: SupabaseClient): Promise<Viewer> {
   const { data } = await supabase.auth.getClaims();
   const email = data?.claims?.email?.toLowerCase();
 
@@ -33,4 +30,24 @@ export const getViewer = cache(async (): Promise<Viewer> => {
     .maybeSingle();
 
   return { email, member };
+}
+
+// Dùng trong Server Component.
+// `cache` để nhiều component trong cùng request chỉ hỏi Supabase một lần.
+export const getViewer = cache(async (): Promise<Viewer> => {
+  // Kiểm tra phiên so hạn token với giờ hiện tại (Date.now) nên phải chạy
+  // theo từng request thật, không prerender/prefetch sẵn.
+  await connection();
+  return readViewer(await createClient());
 });
+
+// Dùng trong Server Action: bắt buộc là thành viên, trả về kèm Supabase client.
+// RLS trên database vẫn là lớp chặn chính; đây là lớp kiểm tra sớm.
+export async function requireMember() {
+  const supabase = await createClient();
+  const { member } = await readViewer(supabase);
+  if (!member) {
+    redirect("/");
+  }
+  return { supabase, member };
+}
