@@ -102,11 +102,12 @@ src/
   lib/sessions.ts          đọc buổi đánh theo tuần, một buổi, thành viên, sân gần đây
   lib/week.ts              ngày/tuần theo giờ Việt Nam
   lib/format.ts            định dạng tiền VNĐ, thời lượng
+  lib/stats.ts             thống kê tuần (số buổi, tổng giờ, tổng chi phí)
   lib/supabase/            tạo Supabase client (server, proxy), đọc biến môi trường
   lib/database.types.ts    kiểu dữ liệu database (sinh bằng npm run db:types)
   app/login/               trang đăng nhập + server action gửi link
   app/auth/confirm/        xử lý link trong email
-  app/page.tsx             danh sách buổi theo tuần (?tuan=YYYY-MM-DD), nút chuyển tuần
+  app/page.tsx             danh sách buổi theo tuần (?tuan=YYYY-MM-DD), nút chuyển tuần, thẻ thống kê
   app/buoi/moi/            thêm buổi
   app/buoi/[id]/           sửa / xóa buổi
   app/buoi/actions.ts      server action lưu / xóa buổi
@@ -122,5 +123,6 @@ supabase/
 ```bash
 npm run lint
 npm run typecheck
+npm test          # unit test (node:test, không cần cài thêm gì)
 npm run build
 ```

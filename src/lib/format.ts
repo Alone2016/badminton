@@ -19,6 +19,13 @@ export function formatDuration(minutes: number): string {
   return `${h} giờ ${m} phút`;
 }
 
+/** Tổng giờ chơi: 270 -> "4h30", 240 -> "4h", 45 -> "0h45", 0 -> "0h" */
+export function formatTotalHours(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
+}
+
 /** 120 -> "2h", 90 -> "1h30", 45 -> "45p" (dùng cho nút chọn nhanh) */
 export function formatDurationShort(minutes: number): string {
   const h = Math.floor(minutes / 60);

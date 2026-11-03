@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { getViewer } from "@/lib/auth";
-import { formatDuration, formatVnd } from "@/lib/format";
+import { formatDuration, formatTotalHours, formatVnd } from "@/lib/format";
 import { listWeekSessions, type PlaySession } from "@/lib/sessions";
+import { weekStats, type WeekStats } from "@/lib/stats";
 import {
   addDays,
   currentMonday,
@@ -54,6 +55,8 @@ async function HomeContent({
       </header>
 
       <WeekNav monday={monday} thisMonday={thisMonday} />
+
+      <WeekStatsCard stats={weekStats(sessions)} />
 
       <SessionList sessions={sessions} />
 
@@ -121,6 +124,58 @@ function WeekNav({
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+// Điện thoại: 2 ô trên, chi phí một hàng dưới. Máy tính: 3 ô một hàng.
+function WeekStatsCard({ stats }: { stats: WeekStats }) {
+  return (
+    <section aria-label="Thống kê tuần" className="mt-4">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <StatTile label="Số buổi" value={String(stats.sessionCount)} />
+        <StatTile
+          label="Tổng giờ chơi"
+          value={formatTotalHours(stats.totalMinutes)}
+          spoken={formatDuration(stats.totalMinutes)}
+        />
+        <StatTile
+          label="Tổng chi phí"
+          value={formatVnd(stats.totalCostVnd)}
+          className="col-span-2 flex items-baseline justify-between gap-3 sm:col-span-1 sm:block"
+        />
+      </dl>
+    </section>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  spoken,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  /** Cách đọc đầy đủ cho trình đọc màn hình, nếu `value` viết tắt. */
+  spoken?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm ${className}`}
+    >
+      <dt className="text-sm text-zinc-500">{label}</dt>
+      <dd className="mt-0.5 text-xl font-semibold tabular-nums">
+        {spoken ? (
+          <>
+            <span aria-hidden>{value}</span>
+            <span className="sr-only">{spoken}</span>
+          </>
+        ) : (
+          value
+        )}
+      </dd>
     </div>
   );
 }
@@ -273,6 +328,11 @@ function HomeSkeleton() {
       <div className="h-4 w-16 rounded bg-zinc-200" />
       <div className="mt-2 h-6 w-40 rounded bg-zinc-200" />
       <div className="mt-6 h-16 rounded-2xl bg-zinc-200" />
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="h-19 rounded-2xl bg-zinc-200" />
+        <div className="h-19 rounded-2xl bg-zinc-200" />
+        <div className="col-span-2 h-13.5 rounded-2xl bg-zinc-200 sm:col-span-1 sm:h-19" />
+      </div>
       <div className="mt-6 h-4 w-24 rounded bg-zinc-200" />
       <div className="mt-2 h-28 rounded-2xl bg-zinc-200" />
       <div className="mt-3 h-28 rounded-2xl bg-zinc-200" />

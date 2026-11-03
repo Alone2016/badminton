@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
+    "test": "node --test \"src/**/*.test.ts\"",
     "db:link": "node --env-file=.env.local node_modules/supabase/dist/supabase.js link --project-ref",
     "db:push": "node --env-file=.env.local node_modules/supabase/dist/supabase.js db push --linked",
     "db:types": "node --env-file=.env.local node_modules/supabase/dist/supabase.js gen types typescript --linked --schema public > src/lib/database.types.ts"
