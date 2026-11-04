@@ -2,6 +2,8 @@
 
 Web cho nhóm cầu lông ghi lại các buổi đánh và xem tổng kết theo tuần.
 
+**Link web: https://cau-long-orcin.vercel.app**
+
 - Next.js 16 (App Router) + TypeScript + Tailwind CSS
 - Supabase: Postgres, đăng nhập bằng link email (không mật khẩu), Row Level Security
 - Deploy: Vercel
@@ -22,8 +24,8 @@ insert into public.members (name, email) values
 
 **2. Gửi tin mời** (Zalo/Messenger), ví dụ:
 
-> Nhóm mình ghi buổi cầu lông ở đây: <link web>
-> Mở link, nhập email của bạn, bấm **Gửi link đăng nhập**, rồi mở email **Đăng nhập Cầu lông** và bấm nút **Đăng nhập**. Mỗi máy chỉ cần làm 1 lần.
+> Nhóm mình ghi buổi cầu lông ở đây: https://cau-long-orcin.vercel.app
+> Mở link, nhập email của bạn, bấm **Gửi link đăng nhập**, rồi mở email **Link đăng nhập Cầu lông** và bấm nút **Đăng nhập**. Mỗi máy chỉ cần làm 1 lần.
 > Trên điện thoại nên thêm vào màn hình chính để mở nhanh: Safari → nút Chia sẻ → **Thêm vào MH chính**; Chrome → menu ⋮ → **Thêm vào màn hình chính**.
 
 Nếu thành viên báo lỗi:
@@ -107,18 +109,19 @@ Thêm/bớt thành viên: xem [Mời thành viên vào nhóm](#mời-thành-viê
 
 Cấu hình Auth trên Supabase (Authentication → URL Configuration):
 
-- **Site URL**: địa chỉ web chính (domain Vercel)
-- **Redirect URLs**: domain Vercel `https://<tên>.vercel.app/**`, cộng `http://localhost:*/**` và `http://127.0.0.1:*/**` để chạy ở máy
+- **Site URL**: `https://cau-long-orcin.vercel.app`
+- **Redirect URLs**: `https://cau-long-orcin.vercel.app/**`, `https://cau-long-alones-projects-8cdd9ade.vercel.app/**`, `https://cau-long-*-alones-projects-8cdd9ade.vercel.app/**` (bản preview), cộng `http://localhost:*/**` và `http://127.0.0.1:*/**` để chạy ở máy
 
 > **Giới hạn email của Supabase miễn phí:** dịch vụ email mặc định chỉ gửi tới email của thành viên trong team Supabase của bạn, chỉ 2 email mỗi giờ, và **không cho sửa mẫu email**. Vì vậy web dùng SMTP riêng (Gmail), xem [Deploy](#deploy-vercel).
 
 ## Deploy (Vercel)
 
-Web chạy trên Vercel gói Hobby (miễn phí), nối với repo GitHub:
+Web chạy trên Vercel gói Hobby (miễn phí), project `cau-long`, nối với repo GitHub `Alone2016/badminton`:
 
 - Push lên nhánh `main` → Vercel tự build và cập nhật link chính sau khoảng 1 phút.
 - Push nhánh khác → Vercel tạo bản xem thử (preview) có link riêng, chỉ người có tài khoản Vercel của project xem được.
 - Lịch sử deploy và log lỗi: Vercel Dashboard → project → **Deployments**.
+- File `.npmrc` ép dùng registry npm công khai. Nếu `package-lock.json` có link `dockerhub.yes4all.internal` (registry nội bộ công ty) thì Vercel không cài được gói và build lỗi `ENOTFOUND`.
 
 **Biến môi trường trên Vercel** (Project → Settings → Environment Variables, áp cho Production và Preview): chỉ hai biến `NEXT_PUBLIC_SUPABASE_URL` và `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Không đưa `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` hay khóa nào khác lên Vercel. Đổi biến xong phải **Redeploy** mới có hiệu lực (biến `NEXT_PUBLIC_*` được gắn vào lúc build).
 
